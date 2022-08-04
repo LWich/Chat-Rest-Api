@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/LWich/chat-rest-api/internal/app/config"
+	_ "github.com/lib/pq" // ...
 	"github.com/sirupsen/logrus"
 )
 

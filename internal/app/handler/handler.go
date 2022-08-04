@@ -3,18 +3,21 @@ package handler
 import (
 	"net/http"
 
+	"github.com/LWich/chat-rest-api/internal/app/store"
 	"github.com/gorilla/mux"
 )
 
 // HelloHandler ...
 type HelloHandler struct {
 	router *mux.Router
+	store  *store.Store
 }
 
 // NewHelloHandler ...
-func NewHelloHandler() *HelloHandler {
+func NewHelloHandler(store *store.Store) *HelloHandler {
 	h := &HelloHandler{
 		router: mux.NewRouter(),
+		store:  store,
 	}
 
 	h.configureRouter()

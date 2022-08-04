@@ -2,5 +2,5 @@ server:
   BindAddr: ':8080'
 postgres:
   PostgresHost: 'localhost'
-  PostgresDbName: ''
-  PostgresSslMode: true
+  PostgresDbName: 'chatapi_dev'
+  PostgresSslMode: 'disable'

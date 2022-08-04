@@ -22,7 +22,7 @@ type (
 	PostgresConfig struct {
 		PostgresHost    string
 		PostgresDbName  string
-		PostgresSslMode bool
+		PostgresSslMode string
 	}
 )
 
