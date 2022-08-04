@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/LWich/chat-rest-api/internal/app/config"
-	"github.com/LWich/chat-rest-api/internal/app/handler"
+	v1 "github.com/LWich/chat-rest-api/internal/app/delivery/http/v1"
 	"github.com/LWich/chat-rest-api/internal/app/server"
 	"github.com/LWich/chat-rest-api/internal/app/store"
 )
@@ -34,11 +34,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	store := store.New(db)
 
-	h := handler.NewHelloHandler(store)
-	s := server.New(h)
+	v1 := v1.New(store)
+	v1.Init()
+	s := server.New(v1)
 
 	s.Run(&cfg.Server)
 }
