@@ -11,6 +11,8 @@ type (
 	Config struct {
 		Server   ServerConfig
 		Postgres PostgresConfig
+		Auth     AuthConfig
+		Session  SessionConfig
 	}
 
 	// ServerConfig ...
@@ -23,6 +25,18 @@ type (
 		PostgresHost    string
 		PostgresDbName  string
 		PostgresSslMode string
+	}
+
+	// AuthConfig ...
+	AuthConfig struct {
+		SigninKey       string
+		AccessTokenTTL  int
+		RefreshTokenTTL int
+	}
+
+	// SessionConfig ...
+	SessionConfig struct {
+		SessionKey string
 	}
 )
 

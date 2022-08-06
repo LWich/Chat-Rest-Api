@@ -10,6 +10,7 @@ import (
 	v1 "github.com/LWich/chat-rest-api/internal/app/delivery/http/v1"
 	"github.com/LWich/chat-rest-api/internal/app/server"
 	"github.com/LWich/chat-rest-api/internal/app/store"
+	"github.com/gorilla/sessions"
 )
 
 var (
@@ -38,7 +39,9 @@ func main() {
 
 	store := store.New(db)
 
-	v1 := v1.New(store)
+	sessionStore := sessions.NewCookieStore([]byte(cfg.Session.SessionKey))
+
+	v1 := v1.New(store, sessionStore, cfg.Auth)
 	v1.Init()
 	s := server.New(v1)
 
