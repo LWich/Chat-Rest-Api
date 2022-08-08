@@ -4,39 +4,30 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/LWich/chat-rest-api/internal/app/config"
-	"github.com/LWich/chat-rest-api/internal/app/store"
-	"github.com/LWich/chat-rest-api/internal/app/tokenmanager"
+	"github.com/LWich/chat-rest-api/internal/app/service"
+	"github.com/LWich/chat-rest-api/pkg/auth"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 // Handler ...
 type Handler struct {
-	store           *store.Store
-	router          *mux.Router
-	sessionStore    sessions.Store
-	tokenManager    *tokenmanager.Manager
-	tokenmanagerCfg config.AuthConfig
+	router       *mux.Router
+	tokenManager auth.TokenManager
+	service      *service.Service
 }
 
 // New ...
-func New(store *store.Store,
-	sessionStore sessions.Store,
-	managerCfg config.AuthConfig,
-) *Handler {
+func New(tokenManager auth.TokenManager, service *service.Service) *Handler {
 	return &Handler{
-		store:           store,
-		router:          mux.NewRouter(),
-		tokenmanagerCfg: managerCfg,
-		tokenManager:    tokenmanager.NewManager(managerCfg.SigninKey),
-		sessionStore:    sessionStore,
+		tokenManager: tokenManager,
+		service:      service,
 	}
 }
 
 // Init ...
-func (h *Handler) Init() {
-	v1 := h.router.PathPrefix("/v1").Subrouter()
+func (h *Handler) Init(api *mux.Router) {
+	h.router = api
+	v1 := api.PathPrefix("/v1").Subrouter()
 	{
 		h.initUsersRoutes(v1)
 	}

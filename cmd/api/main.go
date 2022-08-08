@@ -7,10 +7,11 @@ import (
 	"log"
 
 	"github.com/LWich/chat-rest-api/internal/app/config"
-	v1 "github.com/LWich/chat-rest-api/internal/app/delivery/http/v1"
+	delivery "github.com/LWich/chat-rest-api/internal/app/delivery/http"
 	"github.com/LWich/chat-rest-api/internal/app/server"
+	"github.com/LWich/chat-rest-api/internal/app/service"
 	"github.com/LWich/chat-rest-api/internal/app/store"
-	"github.com/gorilla/sessions"
+	"github.com/LWich/chat-rest-api/pkg/auth"
 )
 
 var (
@@ -39,11 +40,14 @@ func main() {
 
 	store := store.New(db)
 
-	sessionStore := sessions.NewCookieStore([]byte(cfg.Session.SessionKey))
+	tokenManager := auth.NewManager(cfg.Auth.SigninKey)
 
-	v1 := v1.New(store, sessionStore, cfg.Auth)
-	v1.Init()
-	s := server.New(v1)
+	service := service.New(store, tokenManager, cfg.Auth.AccessTokenTTL, cfg.Auth.RefreshTokenTTL)
+
+	handler := delivery.New(service, tokenManager)
+	handler.Init()
+
+	s := server.New(handler)
 
 	s.Run(&cfg.Server)
 }

@@ -2,10 +2,9 @@ package store
 
 import (
 	"github.com/LWich/chat-rest-api/internal/app/model"
-	"github.com/gorilla/sessions"
 )
 
-// UserRepository
+// UserRepository ...
 type UserRepository struct {
 	store *Store
 }
@@ -28,14 +27,12 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
 
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password, expires_in, refresh_token FROM users WHERE email=$1",
+		"SELECT id, email, encrypted_password FROM users WHERE email=$1",
 		email,
 	).Scan(
 		&u.Id,
 		&u.Email,
 		&u.EncryptedPassword,
-		&u.ExpiresIn,
-		&u.RefreshToken,
 	); err != nil {
 		return nil, err
 	}
@@ -44,9 +41,7 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 }
 
 // SetRefreshTokenBySession ...
-func (r *UserRepository) SetRefreshTokenBySession(userId int, session *sessions.Session) error {
-	refreshToken := session.Values["refreshToken"]
-	expiresIn := session.Options.MaxAge
+func (r *UserRepository) SetRefreshTokenAndExpiresIn(userId int, expiresIn int, refreshToken string) error {
 
 	_, err := r.store.db.Exec(
 		"UPDATE users SET refresh_token=$1, expires_in=$2 WHERE id=$3",

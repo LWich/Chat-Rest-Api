@@ -12,7 +12,6 @@ type (
 		Server   ServerConfig
 		Postgres PostgresConfig
 		Auth     AuthConfig
-		Session  SessionConfig
 	}
 
 	// ServerConfig ...
@@ -32,11 +31,6 @@ type (
 		SigninKey       string
 		AccessTokenTTL  int
 		RefreshTokenTTL int
-	}
-
-	// SessionConfig ...
-	SessionConfig struct {
-		SessionKey string
 	}
 )
 

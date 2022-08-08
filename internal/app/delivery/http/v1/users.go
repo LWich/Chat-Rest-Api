@@ -2,23 +2,11 @@ package v1
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/LWich/chat-rest-api/internal/app/model"
+	"github.com/LWich/chat-rest-api/internal/app/service"
 	"github.com/gorilla/mux"
-)
-
-var (
-	sessionName = "refresh-token"
-)
-
-var (
-	ErrPasswordOrEmailIncorrect = errors.New("password or email incorrect")
-	ErrIncorrectRefreshToken    = errors.New("incorect refresh token")
-	ErrRefreshTokenObsolete     = errors.New("err refresh token obsolete")
 )
 
 // Tokens ...
@@ -47,25 +35,16 @@ func (h *Handler) userRefresh() http.HandlerFunc {
 			return
 		}
 
-		u, err := h.store.User().FindByRefreshToken(req.Token)
+		tokens, err := h.service.Users.RefreshTokens(req.Token)
 		if err != nil {
-			h.error(w, r, http.StatusBadRequest, ErrIncorrectRefreshToken)
-			return
-		}
+			var code int
+			if err == service.ErrFailedToCreateTokens {
+				code = http.StatusInternalServerError
+			}
 
-		session, err := h.sessionStore.Get(r, sessionName)
-		if err != nil {
-			h.error(w, r, http.StatusInternalServerError, err)
-			return
-		}
-		if session.Options.MaxAge < 0 {
-			h.error(w, r, http.StatusUnauthorized, ErrRefreshTokenObsolete)
-			return
-		}
+			code = http.StatusBadRequest
 
-		tokens, err := h.createSession(w, r, u.Id)
-		if err != nil {
-			h.error(w, r, http.StatusInternalServerError, err)
+			h.error(w, r, code, err)
 			return
 		}
 
@@ -85,48 +64,24 @@ func (h *Handler) userSignIn() http.HandlerFunc {
 			return
 		}
 
-		u, err := h.store.User().FindByEmail(req.Email)
-		if err != nil || !u.ComparerPassword(req.Password) {
-			h.error(w, r, http.StatusUnauthorized, ErrPasswordOrEmailIncorrect)
-			return
-		}
-
-		tokens, err := h.createSession(w, r, u.Id)
+		tokens, err := h.service.Users.SignIn(service.UsersSignInInput{
+			Email:    req.Email,
+			Password: req.Password,
+		})
 		if err != nil {
-			h.error(w, r, http.StatusInternalServerError, err)
+			var code int
+			if err == service.ErrFailedToCreateTokens {
+				code = http.StatusInternalServerError
+			}
+
+			code = http.StatusUnauthorized
+
+			h.error(w, r, code, err)
 			return
 		}
 
 		h.respond(w, r, http.StatusOK, tokens)
 	}
-}
-
-func (h *Handler) createSession(w http.ResponseWriter, r *http.Request, userId int) (*Tokens, error) {
-	var (
-		res Tokens
-		err error
-	)
-
-	res.AccessToken, err = h.tokenManager.NewJWT(userId, time.Duration(h.tokenmanagerCfg.AccessTokenTTL))
-	if err != nil {
-		return nil, err
-	}
-
-	res.RefreshToken = h.tokenManager.NewRefreshToken()
-
-	session, err := h.sessionStore.Get(r, sessionName)
-	if err != nil {
-		return nil, err
-	}
-
-	session.Values["refreshToken"] = res.RefreshToken
-	session.Options.MaxAge = h.tokenmanagerCfg.RefreshTokenTTL
-
-	if err := session.Save(r, w); err != nil {
-		return nil, err
-	}
-
-	return &res, h.store.User().SetRefreshTokenBySession(userId, session)
 }
 
 func (h *Handler) userSignUp() http.HandlerFunc {
@@ -142,17 +97,14 @@ func (h *Handler) userSignUp() http.HandlerFunc {
 			return
 		}
 
-		u := &model.User{
+		u, err := h.service.Users.SignUp(service.UsersSignUpInput{
 			Email:    req.Email,
 			Password: req.Password,
-		}
-
-		if err := h.store.User().Create(u); err != nil {
-			h.error(w, r, http.StatusBadRequest, err)
+		})
+		if err != nil {
+			h.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
-		u.Sanitize()
 
 		h.respond(w, r, http.StatusOK, u)
 	}
