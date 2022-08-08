@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/LWich/chat-rest-api/internal/app/config"
@@ -39,9 +38,6 @@ func New(store *store.Store,
 func (h *Handler) Init() {
 	v1 := h.router.PathPrefix("/v1").Subrouter()
 	{
-		v1.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(w.Header().Get("X-Auth-Token"))
-		})
 		h.initUsersRoutes(v1)
 	}
 }

@@ -28,12 +28,14 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
 
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password FROM users WHERE email=$1",
+		"SELECT id, email, encrypted_password, expires_in, refresh_token FROM users WHERE email=$1",
 		email,
 	).Scan(
 		&u.Id,
 		&u.Email,
 		&u.EncryptedPassword,
+		&u.ExpiresIn,
+		&u.RefreshToken,
 	); err != nil {
 		return nil, err
 	}
@@ -41,7 +43,7 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	return u, nil
 }
 
-// SetCookie ...
+// SetRefreshTokenBySession ...
 func (r *UserRepository) SetRefreshTokenBySession(userId int, session *sessions.Session) error {
 	refreshToken := session.Values["refreshToken"]
 	expiresIn := session.Options.MaxAge
@@ -54,4 +56,25 @@ func (r *UserRepository) SetRefreshTokenBySession(userId int, session *sessions.
 	)
 
 	return err
+}
+
+// FindByRefreshToken ...
+func (r *UserRepository) FindByRefreshToken(refreshToken string) (*model.User, error) {
+	u := &model.User{}
+
+	err := r.store.db.QueryRow(
+		"SELECT id, email, encrypted_password, expires_in, refresh_token FROM users WHERE refresh_token=$1",
+		refreshToken,
+	).Scan(
+		&u.Id,
+		&u.Email,
+		&u.EncryptedPassword,
+		&u.ExpiresIn,
+		&u.RefreshToken,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }

@@ -17,6 +17,8 @@ var (
 
 var (
 	ErrPasswordOrEmailIncorrect = errors.New("password or email incorrect")
+	ErrIncorrectRefreshToken    = errors.New("incorect refresh token")
+	ErrRefreshTokenObsolete     = errors.New("err refresh token obsolete")
 )
 
 // Tokens ...
@@ -30,6 +32,44 @@ func (h *Handler) initUsersRoutes(router *mux.Router) {
 	{
 		users.HandleFunc("/signup", h.userSignUp())
 		users.HandleFunc("/signin", h.userSignIn())
+		users.HandleFunc("/auth/refresh", h.userRefresh())
+	}
+}
+
+func (h *Handler) userRefresh() http.HandlerFunc {
+	type request struct {
+		Token string `json:"token"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := &request{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		u, err := h.store.User().FindByRefreshToken(req.Token)
+		if err != nil {
+			h.error(w, r, http.StatusBadRequest, ErrIncorrectRefreshToken)
+			return
+		}
+
+		session, err := h.sessionStore.Get(r, sessionName)
+		if err != nil {
+			h.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		if session.Options.MaxAge < 0 {
+			h.error(w, r, http.StatusUnauthorized, ErrRefreshTokenObsolete)
+			return
+		}
+
+		tokens, err := h.createSession(w, r, u.Id)
+		if err != nil {
+			h.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		h.respond(w, r, http.StatusOK, tokens)
 	}
 }
 
