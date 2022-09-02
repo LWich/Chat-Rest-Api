@@ -1,3 +1,3 @@
 # Chat-Rest-Api
 
-![](https://hmvg.herokuapp.com?username=your_github_username)
+![](https://hmvg.herokuapp.com?username=LWich)
